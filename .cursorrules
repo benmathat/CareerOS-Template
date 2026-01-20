@@ -1,0 +1,5 @@
+# Cursor Rules
+
+## Date and Time Updates
+
+When updating dates or times in any document, always retrieve the current date and time from the operating system first using the appropriate system command or tool. Never use hardcoded dates or times, and never assume the current date/time without verifying it from the system.
