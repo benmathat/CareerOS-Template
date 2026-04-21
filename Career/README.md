@@ -56,6 +56,41 @@ All folders described below are located within the `Career/` workspace:
 - `Career/10_Coaching_Feedback_and_Notes/`
 - `Career/11_Job_Search_Activities/`
 - `Career/99_Archive/`
+- `Career/INBOX/`
+
+---
+
+## INBOX — Staging Area for Incoming Documents
+
+**Location:** `Career/INBOX/`
+
+**Purpose:**  
+Capture incoming documents and materials before processing and organizing them into the appropriate sections of CareerOS.
+
+This folder serves as a **staging area** for:
+- Documents received from recruiters, hiring managers, or contacts
+- Job postings or role descriptions to be evaluated
+- Company research materials
+- Interview notes that need to be processed
+- Feedback or coaching notes
+- Any other career-related documents that need to be reviewed and filed
+
+**Use this when:**
+- You receive a document via email, message, or download
+- You need to quickly capture something before you have time to process it
+- You're unsure where something belongs and need to decide later
+- You want to batch process multiple items at once
+
+**Workflow:**
+1. **Capture** - Drop incoming documents here immediately
+2. **Process** - Regularly review and move items to their proper locations
+3. **Archive** - Move processed items to `99_Archive/` if they're no longer needed
+
+**Key Rules:**
+- **Keep it lean** - Process items regularly (daily or weekly)
+- **Don't let it accumulate** - Empty it as part of your weekly review
+- **Use descriptive filenames** - Include dates and source when saving items
+- **When in doubt, put it here** - Better to capture first, organize later
 
 ---
 
@@ -303,12 +338,13 @@ Nothing is deleted — it is just deactivated.
 
 ## How to Use This System Week to Week
 
-1. Review `Career/00_ReadMe_and_Index/search-status.md`
-2. Update the application tracker at `Career/07_Applications_and_Interviews/Applications/application-tracker.md`
-3. Log work search activities daily in `Career/11_Job_Search_Activities/Work_Search_Log.md`
-4. Capture interview notes immediately
-5. Extract lessons into stories or strategy
-6. Archive aggressively
+1. Process `Career/INBOX/` - Review and file incoming documents
+2. Review `Career/00_ReadMe_and_Index/search-status.md`
+3. Update the application tracker at `Career/07_Applications_and_Interviews/Applications/application-tracker.md`
+4. Log work search activities daily in `Career/11_Job_Search_Activities/Work_Search_Log.md`
+5. Capture interview notes immediately
+6. Extract lessons into stories or strategy
+7. Archive aggressively
 
 If you are unsure where something belongs:
 - Ask: **Is this thinking, doing, or learning?**

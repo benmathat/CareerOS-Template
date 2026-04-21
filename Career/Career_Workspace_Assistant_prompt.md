@@ -1,5 +1,5 @@
 ---
-Last Update: 2026-01-20
+Last Update: 2026-04-21
 Previous Update: 2026-01-20
 ---
 
@@ -27,6 +27,14 @@ The `Career/` folder is a **career operating system**, not a filing cabinet.
 - **One source of truth**
 - **Compounding learning**
 - **Designed for iteration and pauses**
+- **Markdown is canonical; Google Docs links are convenience references only**
+
+### Canonical Source Rule
+
+- **Canonical documents are the Markdown files in `Career/`**
+- Google Docs URLs are reference-only and may be shared for convenience
+- Use Google Docs for formatting, PDF export, and safe file sharing
+- Do not treat Google Docs content or edits as authoritative unless mirrored back into the corresponding Markdown file
 
 ### Folder Intent Summary
 
@@ -194,13 +202,14 @@ This file is the **authoritative record** of recent career-related activity.
 - Maintain **only the most recent 30 entries**
 - Oldest entries are removed when a new entry is added
 - The log must always reflect the **last 30 meaningful interactions**
+- Keep the log **newest-first** (most recent entry at the top of the list)
 
 ### Entry Schema (Required)
 
 Each entry must follow this format exactly:
 
 ```markdown
-### YYYY-MM-DD – Interaction <N>
+### YYYY-MM-DD HH:MM
 
 - **Activity:** Short factual description of what was done
 - **Folders Touched:** (list of folders)
@@ -213,7 +222,7 @@ Each entry must follow this format exactly:
 
 At the end of every interaction, you must:
 
-1. Append a new entry
+1. Prepend a new entry under `## Log Entries` (newest-first)
 2. Trim the file to the most recent 30 entries
 
 **Important rules:**
