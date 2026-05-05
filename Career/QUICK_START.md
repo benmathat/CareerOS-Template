@@ -84,6 +84,7 @@ Complete these in order. Each builds on the previous one.
 **Why:** This is where you'll track everything. Having it ready means you can log opportunities immediately.
 
 **Template:** Already set up at `07_Applications_and_Interviews/Applications/application-tracker.md`
+**Repair/Sync:** Run `/sync-application-tracker` to reconcile tracker rows with application detail files.
 
 ---
 

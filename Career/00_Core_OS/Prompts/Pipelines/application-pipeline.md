@@ -26,6 +26,7 @@ It MUST:
 - define stage inputs and outputs
 - define decision gates and state transitions
 - define artifact routing and record updates
+- include automatic synchronization of `07_Applications_and_Interviews/Applications/application-tracker.md` when application state changes
 - support resume-from-last-valid-stage execution
 
 It MUST NOT:
@@ -411,6 +412,12 @@ submission_preparation_record:
 ### State Transition
 - `drafting` → `submission_prepared`
 
+### Tracker Sync (Required)
+- Automatically create or update the matching row in `07_Applications_and_Interviews/Applications/application-tracker.md`
+- Set `Status` to `Identified` or `Applied` based on available submission evidence
+- Update `Last Action` and `Next Action` from submission preparation outputs
+- Link the current application detail file in `Resume Version` (or equivalent artifact column)
+
 ---
 
 ## 6.6 Stage 6 — Submission Confirmation
@@ -435,6 +442,7 @@ Confirm submission occurred and record durable proof.
 - capture confirmation evidence
 - set application status to submitted
 - store initial follow-up anchor
+- automatically update `07_Applications_and_Interviews/Applications/application-tracker.md` for the same opportunity
 
 ### Output
 ```yaml
@@ -451,6 +459,12 @@ application_record:
 
 ### State Transition
 - `submission_prepared` → `submitted`
+
+### Tracker Sync (Required)
+- Upsert tracker row keyed by opportunity/application ID
+- Set `Status` to `Applied` (or the active interview-stage status if already advanced)
+- Append submission confirmation details to `Last Action`
+- Recompute `Next Action` with follow-up date anchor
 
 ---
 
@@ -509,6 +523,10 @@ follow_up_plan:
 
 ### State Transition
 - `compliance_recommended` → `follow_up_planned`
+
+### Tracker Sync (Required)
+- Automatically update `Next Action` and `Last Action` to reflect follow-up plan output
+- If state transitions to `pass`, `closed`, `withdrawn`, or `rejected`, move entry to the tracker archive section according to tracker policy
 
 ---
 
@@ -609,12 +627,14 @@ A stage may complete only if:
 - output structure matches declared schema
 - output is written to the correct destination
 - state transition is explicitly recorded
+- the corresponding tracker sync succeeds for stages that change application state
 
 Failure conditions:
 - missing required input → halt
 - invalid output schema → halt
 - unresolved source reference → halt
 - pack execution failure → halt
+- tracker sync failure → halt
 
 The pipeline MUST NOT advance under any failure condition.
 

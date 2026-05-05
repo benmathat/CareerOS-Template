@@ -70,7 +70,12 @@ If validation fails:
     - linked analysis
     - linked artifacts
     - next action
-14. If the application is actually submitted during this workflow, update status to `submitted` and record submission metadata.
+14. Automatically sync `Career/07_Applications_and_Interviews/Applications/application-tracker.md` during this workflow:
+    - create row if missing
+    - otherwise update existing row
+    - keep `Status`, `Last Action`, `Next Action`, and `Resume Version` aligned with generated artifacts
+15. If the application is actually submitted during this workflow, update status to `submitted`, record submission metadata, and update tracker status to `Applied` (or higher active stage if known).
+16. Treat tracker sync as a required write. If tracker update fails, STOP and report the blocker.
 
 ## Compliance Hook
 If the application is actually submitted or an external application-related action occurs:

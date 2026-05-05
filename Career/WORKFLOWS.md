@@ -108,6 +108,7 @@ When workflow guidance conflicts with command/runtime contracts, follow runtime 
    - Open `Applications/application-tracker.md`
    - Set up table structure
    - Prepare for tracking
+   - Run `/sync-application-tracker` any time tracker rows need repair/reconciliation
 
 2. **Review interview prep materials**
    - Check `Interview_Prep/story-inventory.md`

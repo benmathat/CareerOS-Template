@@ -104,6 +104,9 @@ Use one of the following normalized methods when possible:
     `Career/11_Job_Search_Activities/Evidence/`
 11. If the activity relates to an opportunity or application, include a reference path.
 12. If entered after the fact, mark it as retrospective and include the true activity date.
+13. If the activity relates to an application lifecycle change (application submitted, interview, follow-up, rejection, withdrawal, hold), automatically update `Career/07_Applications_and_Interviews/Applications/application-tracker.md` in the same run.
+14. For tracker updates, upsert the matching row and keep `Status`, `Last Action`, and `Next Action` in sync with the new activity.
+15. If the tracker update cannot be completed safely, STOP and report a blocking error instead of logging only a partial workflow update.
 
 ## Required Log Entry Fields
 Every entry MUST include:
