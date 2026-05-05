@@ -11,8 +11,8 @@ Welcome to your Career Workspace! This guide will help you get started in **30-6
 
 This guide is for workspace setup and momentum. For command execution behavior, runtime IO emission, and deterministic pass/fail gate enforcement, use:
 
-- `00_ReadMe_and_Index/Prompts/README.md`
-- `00_ReadMe_and_Index/Prompts/Runtime/operator-runbook.md`
+- `00_Core_OS/Prompts/README.md`
+- `00_Core_OS/Prompts/Runtime/operator-runbook.md`
 - `.cursor/commands/*.md`
 - `.cursor/runtime/<command>.runtime-io.yaml`
 - `scripts/run_command_gate.sh ".cursor/runtime/<command>.runtime-io.yaml"`
@@ -40,7 +40,7 @@ Complete these in order. Each builds on the previous one.
 
 ### 1. Set Your Current Focus (5 minutes)
 
-**File:** `00_ReadMe_and_Index/career-index.md`
+**File:** `00_Core_OS/career-index.md`
 
 **What to do:**
 - Fill in the "Snapshot" section:
@@ -108,7 +108,7 @@ Complete these in order. Each builds on the previous one.
 
 ### 5. Initialize Your Search Status (5 minutes)
 
-**File:** `00_ReadMe_and_Index/search-status.md`
+**File:** `00_Core_OS/search-status.md`
 
 **What to do:**
 - Mark your current phase (Exploration, Active Applications, etc.)
@@ -117,7 +117,7 @@ Complete these in order. Each builds on the previous one.
 
 **Why:** This keeps you focused week-to-week and prevents overwhelm.
 
-**Template:** Already set up at `00_ReadMe_and_Index/search-status.md`
+**Template:** Already set up at `00_Core_OS/search-status.md`
 
 ---
 
@@ -242,8 +242,8 @@ When you're ready to go deeper, here are the most important templates:
 ## Quick Reference: File Locations
 
 **Control & Orientation:**
-- `00_ReadMe_and_Index/career-index.md` - Your control center
-- `00_ReadMe_and_Index/search-status.md` - Weekly focus
+- `00_Core_OS/career-index.md` - Your control center
+- `00_Core_OS/search-status.md` - Weekly focus
 
 **Strategy:**
 - `04_Career_Goals_and_Strategy/Role_Targets/` - What you're targeting

@@ -366,5 +366,5 @@ For visual tracking (if using markdown viewers that support HTML or color-coding
 
 - **Application Tracker:** `07_Applications_and_Interviews/Applications/application-tracker.md`
 - **Application Detail Template:** `07_Applications_and_Interviews/Applications/application-detail-template.md`
-- **Search Status:** `00_ReadMe_and_Index/search-status.md`
+- **Search Status:** `00_Core_OS/search-status.md`
 - **Workflows:** `WORKFLOWS.md` (see "Processing a New Opportunity")

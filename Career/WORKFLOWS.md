@@ -11,7 +11,7 @@ This document describes how workflows connect across folders in the Career works
 
 These workflows describe domain process flow. Command execution in the current implementation is controlled by runtime contracts and command entrypoints:
 
-- `00_ReadMe_and_Index/Prompts/Runtime/operator-runbook.md`
+- `00_Core_OS/Prompts/Runtime/operator-runbook.md`
 - `.cursor/commands/*.md`
 - `.cursor/runtime/<command>.runtime-io.yaml`
 - `scripts/run_command_gate.sh ".cursor/runtime/<command>.runtime-io.yaml"`
@@ -73,7 +73,7 @@ When workflow guidance conflicts with command/runtime contracts, follow runtime 
 
 ### Step 3: Update Control Documents
 
-**Location:** `00_ReadMe_and_Index/`
+**Location:** `00_Core_OS/`
 
 1. **Update `career-index.md`**
    - Set current focus
@@ -351,7 +351,7 @@ When workflow guidance conflicts with command/runtime contracts, follow runtime 
 
 ### Step 4: Update Control Documents
 
-**Location:** `00_ReadMe_and_Index/`
+**Location:** `00_Core_OS/`
 
 1. **Update `career-index.md`**
    - Clear active job searches table (or mark as complete)
@@ -391,7 +391,7 @@ When workflow guidance conflicts with command/runtime contracts, follow runtime 
 
 ### Monday: Orientation & Planning
 
-**Location:** `00_ReadMe_and_Index/`
+**Location:** `00_Core_OS/`
 
 1. **Review `career-index.md`**
    - Confirm current focus and targets
@@ -522,7 +522,7 @@ When workflow guidance conflicts with command/runtime contracts, follow runtime 
 
 ### Control Documents Update
 
-**Location:** `00_ReadMe_and_Index/`
+**Location:** `00_Core_OS/`
 
 1. **Review `career-index.md`**
    - Update current focus if changed

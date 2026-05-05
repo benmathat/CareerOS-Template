@@ -12,8 +12,8 @@ This index maps common workflows and tasks to the specific documents and templat
 **Workflow:** See `WORKFLOWS.md` → "Starting a New Job Search"
 
 **Documents needed:**
-- `00_ReadMe_and_Index/career-index.md` - Set current focus
-- `00_ReadMe_and_Index/search-status.md` - Initialize search status
+- `00_Core_OS/career-index.md` - Set current focus
+- `00_Core_OS/search-status.md` - Initialize search status
 - `04_Career_Goals_and_Strategy/Role_Targets/role-target-template.md` - Define target roles
 - `04_Career_Goals_and_Strategy/Career_Vision/career-vision-template.md` - Long-term vision (optional)
 - `05_Personal_Profile/Work_Preferences/work-preferences-template.md` - Document preferences
@@ -131,8 +131,8 @@ This index maps common workflows and tasks to the specific documents and templat
 **Workflow:** See `WORKFLOWS.md` → "Weekly Maintenance Routine"
 
 **Documents needed:**
-- `00_ReadMe_and_Index/search-status.md` - Update priorities and status
-- `00_ReadMe_and_Index/career-index.md` - Review current focus
+- `00_Core_OS/search-status.md` - Update priorities and status
+- `00_Core_OS/career-index.md` - Review current focus
 - `07_Applications_and_Interviews/Applications/application-tracker.md` - Update statuses
 - `10_Coaching_Feedback_and_Notes/Self_Reflection/` - Capture learnings
 
@@ -163,15 +163,15 @@ This index maps common workflows and tasks to the specific documents and templat
 - `10_Coaching_Feedback_and_Notes/Interview_Feedback/` - Save feedback
 - `10_Coaching_Feedback_and_Notes/Self_Reflection/` - Document learnings
 - `99_Archive/search-YYYY-MM/` - Create archive folder
-- `00_ReadMe_and_Index/career-index.md` - Update version control
+- `00_Core_OS/career-index.md` - Update version control
 
 ---
 
 ## Quick Reference: Document Types
 
 ### Control & Orientation
-- `00_ReadMe_and_Index/career-index.md` - Strategic control center
-- `00_ReadMe_and_Index/search-status.md` - Tactical status tracking
+- `00_Core_OS/career-index.md` - Strategic control center
+- `00_Core_OS/search-status.md` - Tactical status tracking
 - `STATUS_DEFINITIONS.md` - Status reference guide
 
 ### Strategy & Planning

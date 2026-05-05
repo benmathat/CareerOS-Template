@@ -15,11 +15,11 @@ Treat the CareerOS prompt system as a deterministic execution architecture.
 
 Authoritative references:
 
-- `Career/00_ReadMe_and_Index/Prompts/README.md`
-- `Career/00_ReadMe_and_Index/Prompts/careeros-prompt-architecture-spec.md`
-- `Career/00_ReadMe_and_Index/Prompts/Runtime/*.md`
-- `Career/00_ReadMe_and_Index/Prompts/Packs/*.md`
-- `Career/00_ReadMe_and_Index/Prompts/Pipelines/*.md`
+- `Career/00_Core_OS/Prompts/README.md`
+- `Career/00_Core_OS/Prompts/careeros-prompt-architecture-spec.md`
+- `Career/00_Core_OS/Prompts/Runtime/*.md`
+- `Career/00_Core_OS/Prompts/Packs/*.md`
+- `Career/00_Core_OS/Prompts/Pipelines/*.md`
 - `.cursor/commands/*.md`
 
 Do NOT use deprecated or legacy prompt models outside this set.
