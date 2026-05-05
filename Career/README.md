@@ -43,7 +43,7 @@ Think of the folders as a **pipeline**, not a filing cabinet.
 
 All folders described below are located within the `Career/` workspace:
 
-- `Career/00_ReadMe_and_Index/`
+- `Career/00_Core_OS/`
 - `Career/01_Resume_and_Profiles/`
 - `Career/02_Work_Experience/`
 - `Career/03_Skills_and_Portfolio/`
@@ -94,9 +94,9 @@ This folder serves as a **staging area** for:
 
 ---
 
-## 00_ReadMe_and_Index — Orientation & Control
+## 00_Core_OS — Orientation & Control
 
-**Location:** `Career/00_ReadMe_and_Index/`
+**Location:** `Career/00_Core_OS/`
 
 **Purpose:**  
 This is the control plane of the system.
@@ -343,7 +343,7 @@ Nothing is deleted — it is just deactivated.
 ## How to Use This System Week to Week
 
 1. Process `Career/INBOX/` - Review and file incoming documents
-2. Review `Career/00_ReadMe_and_Index/search-status.md`
+2. Review `Career/00_Core_OS/search-status.md`
 3. Update the application tracker at `Career/07_Applications_and_Interviews/Applications/application-tracker.md`
 4. Log work search activities daily in `Career/11_Job_Search_Activities/Work_Search_Log.md`
 5. Capture interview notes immediately
@@ -354,8 +354,8 @@ Nothing is deleted — it is just deactivated.
 
 For command-driven CareerOS execution, use this path first:
 
-1. `00_ReadMe_and_Index/Prompts/README.md`
-2. `00_ReadMe_and_Index/Prompts/Runtime/operator-runbook.md`
+1. `00_Core_OS/Prompts/README.md`
+2. `00_Core_OS/Prompts/Runtime/operator-runbook.md`
 3. `.cursor/commands/*.md` command contracts
 4. `.cursor/runtime/<command>.runtime-io.yaml` runtime emission files
 5. `scripts/run_command_gate.sh ".cursor/runtime/<command>.runtime-io.yaml"` before final writes
