@@ -1,6 +1,6 @@
 ---
-Last Update: 2026-01-20
-Previous Update: 
+Last Update: 2026-04-19
+Previous Update: 2026-01-21
 ---
 
 # Search Status
@@ -11,6 +11,8 @@ Previous Update:
 - ☐ Interviewing
 - ☐ Offer Evaluation
 - ☐ Paused / Maintenance
+
+**Current Phase (selected):** Active Applications
 
 ---
 

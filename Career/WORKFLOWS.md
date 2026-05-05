@@ -1,11 +1,22 @@
 ---
-Last Update: 2026-01-20
-Previous Update: 
+Last Update: 2026-05-05
+Previous Update: 2026-01-20
 ---
 
 # Career Workspace Workflows
 
 This document describes how workflows connect across folders in the Career workspace. Use these workflows to understand how to move information and activities through the system.
+
+## Runtime-First Execution Note
+
+These workflows describe domain process flow. Command execution in the current implementation is controlled by runtime contracts and command entrypoints:
+
+- `00_ReadMe_and_Index/Prompts/Runtime/operator-runbook.md`
+- `.cursor/commands/*.md`
+- `.cursor/runtime/<command>.runtime-io.yaml`
+- `scripts/run_command_gate.sh ".cursor/runtime/<command>.runtime-io.yaml"`
+
+When workflow guidance conflicts with command/runtime contracts, follow runtime contracts.
 
 ## Table of Contents
 

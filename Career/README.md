@@ -1,6 +1,6 @@
 ---
-Last Update: 2026-01-20
-Previous Update: 
+Last Update: 2026-05-05
+Previous Update: 2026-04-22
 ---
 
 # Career Workspace
@@ -142,6 +142,7 @@ It captures:
 - Projects and initiatives
 - Achievements and failures
 - Metrics and outcomes
+- Long-form canonical story inventory in `Career/02_Work_Experience/Stories/`
 
 **Use this when:**
 - Updating resumes
@@ -237,10 +238,13 @@ Tracks:
 - Interview prep
 - Interview notes
 - Offers and negotiation
+- Purpose-built, application-specific story variants in `Career/07_Applications_and_Interviews/Interview_Prep/Stories/`
 
 This folder turns activity into insight.
 
 Every interaction should leave a trace here.
+
+**Story boundary rule:** Canonical long-form stories belong in `Career/02_Work_Experience/Stories/`. Use `Career/07_Applications_and_Interviews/Interview_Prep/Stories/` only for role/application-specific variants prepared for active interview loops.
 
 ---
 
@@ -346,9 +350,31 @@ Nothing is deleted — it is just deactivated.
 6. Extract lessons into stories or strategy
 7. Archive aggressively
 
+## Runtime-First Command Path (Primary Execution)
+
+For command-driven CareerOS execution, use this path first:
+
+1. `00_ReadMe_and_Index/Prompts/README.md`
+2. `00_ReadMe_and_Index/Prompts/Runtime/operator-runbook.md`
+3. `.cursor/commands/*.md` command contracts
+4. `.cursor/runtime/<command>.runtime-io.yaml` runtime emission files
+5. `scripts/run_command_gate.sh ".cursor/runtime/<command>.runtime-io.yaml"` before final writes
+
+`QUICK_START.md` and `WORKFLOWS.md` remain useful for workspace setup and general process guidance, but runtime command behavior is governed by prompt runtime contracts and command docs.
+
 If you are unsure where something belongs:
 - Ask: **Is this thinking, doing, or learning?**
 - Then place it accordingly.
+
+---
+
+## Cursor Chat Prompt Loading Behavior
+
+To reliably start an interactive CareerOS assistant session in Cursor Chat, use an explicit load instruction with the prompt reference:
+
+- `Load @Career/Career_Workspace_Assistant_prompt.md`
+
+Using only a file reference may not consistently trigger interactive startup behavior.
 
 ---
 

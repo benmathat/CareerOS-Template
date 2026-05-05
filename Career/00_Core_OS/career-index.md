@@ -37,6 +37,12 @@ Last Updated Reminder: Update this file when:
 - Role Targets: `../04_Career_Goals_and_Strategy/Role_Targets/`
 - Transition Strategy: `../04_Career_Goals_and_Strategy/Transition_Strategy/`
 
+### Key Resources
+- Using CareerOS with ChatGPT: `using-careeros-with-chatgpt.md`
+- Career Workspace Assistant Prompt: `../Career_Workspace_Assistant_prompt.md`
+- Activity Log: `activity-log.md`
+- Search Status: `search-status.md`
+
 ---
 
 ## Active Job Searches

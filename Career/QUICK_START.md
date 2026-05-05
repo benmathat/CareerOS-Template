@@ -1,11 +1,21 @@
 ---
-Last Update: 2026-01-20
-Previous Update: 
+Last Update: 2026-05-05
+Previous Update: 2026-01-20
 ---
 
 # Quick Start Guide
 
 Welcome to your Career Workspace! This guide will help you get started in **30-60 minutes** with the minimum setup needed to begin a job search.
+
+## Runtime-First Note (Current CareerOS Implementation)
+
+This guide is for workspace setup and momentum. For command execution behavior, runtime IO emission, and deterministic pass/fail gate enforcement, use:
+
+- `00_ReadMe_and_Index/Prompts/README.md`
+- `00_ReadMe_and_Index/Prompts/Runtime/operator-runbook.md`
+- `.cursor/commands/*.md`
+- `.cursor/runtime/<command>.runtime-io.yaml`
+- `scripts/run_command_gate.sh ".cursor/runtime/<command>.runtime-io.yaml"`
 
 ## Before You Start
 

@@ -10,15 +10,17 @@ CareerOS is a structured workspace that helps you manage your career with clarit
 
 - **Strategy Before Volume**: Prioritizes clarity of direction over mass applications
 - **Truth Separated from Polish**: Raw experience and metrics live separately from resumes and cover letters
+- **Canonical vs Tactical Stories**: Long-form canonical stories live in `Career/02_Work_Experience/Stories/`, while application-specific story variants live in `Career/07_Applications_and_Interviews/Interview_Prep/Stories/`
 - **One Source of Truth**: Centralized repository for experience, goals, preferences, and constraints
 - **Compounding Learning**: Captures and reuses signal from every application, interview, and rejection
 - **Designed for Iteration**: Supports multiple searches, role pivots, pauses, and restarts without losing context
 
 ## Structure
 
-The workspace is organized into 12 main sections:
+The workspace is organized into 13 main sections:
 
-- `00_ReadMe_and_Index/` - Orientation & control
+- `INBOX/` - Staging area for incoming documents
+- `00_Core_OS/` - Orientation & control
 - `01_Resume_and_Profiles/` - External representation
 - `02_Work_Experience/` - Raw career data
 - `03_Skills_and_Portfolio/` - Proof of capability
@@ -35,13 +37,16 @@ The workspace is organized into 12 main sections:
 ## Getting Started
 
 1. Review the main documentation in `Career/README.md`
-2. Check out `Career/QUICK_START.md` for a 30-60 minute setup guide
-3. Explore `Career/WORKFLOWS.md` for step-by-step workflows
-4. Use the templates provided in each section to get started quickly
+2. Use runtime-first onboarding in `Career/00_Core_OS/Prompts/README.md`
+3. Execute commands using `Career/00_Core_OS/Prompts/Runtime/operator-runbook.md`
+4. Use `Career/QUICK_START.md` and `Career/WORKFLOWS.md` as supporting workspace setup/reference guides
 
 ## Documentation
 
 - **[Career/README.md](Career/README.md)** - Complete system overview
+- **[Career/00_Core_OS/Prompts/README.md](Career/00_Core_OS/Prompts/README.md)** - Runtime-first prompt system overview
+- **[Career/00_Core_OS/Prompts/Runtime/operator-runbook.md](Career/00_Core_OS/Prompts/Runtime/operator-runbook.md)** - Command execution protocol
+- **[Career/00_Core_OS/careeros-structure-map.md](Career/00_Core_OS/careeros-structure-map.md)** - Compressed structure map used for prompt contexts
 - **[Career/QUICK_START.md](Career/QUICK_START.md)** - Quick start guide
 - **[Career/WORKFLOWS.md](Career/WORKFLOWS.md)** - Detailed workflows
 - **[Career/WORKFLOW_INDEX.md](Career/WORKFLOW_INDEX.md)** - Workflow reference
