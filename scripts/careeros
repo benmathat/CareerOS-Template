@@ -1,0 +1,583 @@
+#!/usr/bin/env python3
+"""CareerOS deterministic helpers (stdlib only).
+
+Mechanical rules that must not depend on which model is driving:
+
+  careeros today                  print the system date (YYYY-MM-DD)
+  careeros slug <company> <role> [date]
+                                  print the normalized <company>_<role>_<date> name
+  careeros run-path <command> <slug> [date]
+                                  print the path for a new runtime IO run file
+  careeros new-run <command> <slug> [--target <opportunity-folder>] [--file <artifact>]
+             [--state new|existing|none] [--date YYYY-MM-DD]
+                                  write a runtime IO skeleton (derivable fields prefilled, rest TODO)
+  careeros touch <file>...        rotate Last Update -> Previous Update, set today
+  careeros gate <runtime-io.yaml> run the runtime IO conformance gate
+  careeros close <opportunity-folder> --outcome pass|withdrawn|rejected|no_response --reason "<text>"
+             [--would-reapply Yes|Maybe|No|Unclear] [--dry-run]
+                                  archive a closed opportunity (used by /close-opportunity)
+  careeros lapsed [--days 30] [--all]
+                                  read-only report of in-flight applications with no activity for
+                                  N days; close one with --outcome no_response
+  careeros index [--write|--check]
+                                  index of open opportunities grouped by career track; --write
+                                  refreshes the generated block in 06_Job_Opportunities/README.md
+  careeros lint <file>...         prose-style warnings for a resume or cover letter (never fails;
+                                  rules in Career/05_Personal_Profile/writing-style.md)
+  careeros check [--staged|--all] repo hygiene checks (used by the pre-commit hook);
+                                  --all also validates every tracked markdown file and the
+                                  state of every in-scope opportunity folder (including claim grounding of
+                                  resume.md and cover-letter.md) and the work log;
+                                  also prints non-blocking prose-style warnings for changed resumes/letters
+"""
+
+from __future__ import annotations
+
+import argparse
+import datetime as dt
+import json
+import re
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import new_run  # noqa: E402
+import state_checks as sc  # noqa: E402
+import grounding_checks as gc  # noqa: E402
+import opp_index  # noqa: E402
+import lapsed  # noqa: E402
+import style_checks as sty  # noqa: E402
+
+ROOT = Path(__file__).resolve().parent.parent
+RUNS_DIR = "Career/00_Core_OS/Runs"
+OPPS_DIR = "Career/06_Job_Opportunities"
+FM_RE = re.compile(r"\A---\n(.*?)\n---\n", re.S)
+LAST_RE = re.compile(r"^Last Update:[ \t]*(.*)$", re.M)
+PREV_RE = re.compile(r"^Previous Update:[ \t]*(.*)$", re.M)
+RUN_FILE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}_[a-z0-9]+(-[a-z0-9]+)*_[a-z0-9]+(_[a-z0-9]+)*\.runtime-io\.yaml$")
+OPP_DIR_RE = re.compile(r"^[a-z0-9]+(_[a-z0-9]+)*_\d{4}-\d{2}-\d{2}$")
+CLOSED_DIR = "Career/99_Archive/Closed_Searches"
+TRACKER = "Career/07_Applications_and_Interviews/Applications/application-tracker.md"
+WORK_LOG = "Career/11_Job_Search_Activities/Work_Search_Log.md"
+FM_LINE_RE = re.compile(r"^(?:\s+\S.*|[A-Za-z0-9_][A-Za-z0-9_ .-]*:(?:\s.*)?|-(?:\s.*)?|#.*)$")
+DATE_IN_ID_RE = re.compile(r"(\d{4})[-_](\d{2})[-_](\d{2})")
+
+
+def today() -> str:
+    return dt.date.today().isoformat()
+
+
+def slug(*parts: str) -> str:
+    cleaned = []
+    for p in parts:
+        s = re.sub(r"[^a-z0-9]+", "_", p.lower()).strip("_")
+        if s:
+            cleaned.append(s)
+    return "_".join(cleaned)
+
+
+def split_frontmatter(text: str) -> tuple[str | None, str]:
+    m = FM_RE.match(text)
+    if not m or not LAST_RE.search(m.group(1)):
+        return None, text
+    return m.group(1), text[m.end():]
+
+
+def rotate(text: str, date: str) -> str | None:
+    """Return text with dates rotated, or None if there is nothing to do."""
+    fm, _ = split_frontmatter(text)
+    if fm is None:
+        return None
+    old = LAST_RE.search(fm).group(1).strip()
+    if old == date:
+        return None
+    new_fm = LAST_RE.sub(lambda _: f"Last Update: {date}", fm, count=1)
+    if PREV_RE.search(new_fm):
+        new_fm = PREV_RE.sub(lambda _: f"Previous Update: {old}", new_fm, count=1)
+    else:
+        new_fm = new_fm.replace(f"Last Update: {date}", f"Last Update: {date}\nPrevious Update: {old}", 1)
+    return text.replace(fm, new_fm, 1)
+
+
+def cmd_touch(files: list[str]) -> int:
+    date = today()
+    for f in files:
+        p = Path(f)
+        text = p.read_text()
+        out = rotate(text, date)
+        if out is None:
+            print(f"skip (no frontmatter or already {date}): {f}")
+        else:
+            p.write_text(out)
+            print(f"touched: {f}")
+    return 0
+
+
+def git(*args: str) -> str:
+    r = subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True)
+    return r.stdout if r.returncode == 0 else ""
+
+
+def cmd_gate(path: str) -> int:
+    return subprocess.call([str(ROOT / "scripts" / "run_command_gate.sh"), path], cwd=ROOT)
+
+
+def frontmatter_problems(text: str) -> list[str]:
+    """Structural problems in a leading YAML frontmatter block ([] if none/ok).
+
+    Catches editor formatters rewriting frontmatter (e.g. into '---', a blank
+    line and '## id: ...'), which YAML itself would silently accept as comments.
+    """
+    if not text.startswith("---\n"):
+        return []
+    lines = text.split("\n")
+    try:
+        end = lines.index("---", 1)
+    except ValueError:
+        return ["frontmatter opens with '---' but never closes"]
+    block = lines[1:end]
+    problems = []
+    if block and not block[0].strip():
+        problems.append("blank line right after opening '---'")
+    for n, line in enumerate(block, start=2):
+        if line.strip() and not FM_LINE_RE.match(line):
+            problems.append(f"line {n} is not YAML key/value: {line[:50]!r}")
+        elif line.lstrip().startswith("#") and re.match(r"^#+\s+\S+\s*:", line):
+            problems.append(f"line {n} looks like a heading/formatter artifact: {line[:50]!r}")
+    try:
+        import yaml  # optional; installed by run_command_gate.sh
+    except ImportError:
+        return problems
+    try:
+        data = yaml.safe_load("\n".join(block))
+        if block and not isinstance(data, dict):
+            problems.append("frontmatter is not a YAML mapping")
+    except yaml.YAMLError as e:
+        problems.append(f"frontmatter is not valid YAML: {str(e).splitlines()[0]}")
+    return problems
+
+
+def resolve_destination(path: str) -> Path:
+    rel = path.lstrip("/")
+    for base in (ROOT, ROOT / "Career"):
+        if (base / rel).exists():
+            return base / rel
+    return ROOT / "Career" / rel
+
+
+def runtime_state_problems(path: str) -> list[str]:
+    """Compare a run file's claims with real repo state (new run files only)."""
+    try:
+        import yaml
+    except ImportError:
+        return []
+    try:
+        data = yaml.safe_load((ROOT / path).read_text())["runtime_io"]
+    except Exception:
+        return []  # the gate reports unparsable files
+    name = Path(path).name
+    date, command, slug_ = name[:10], name[11:].split("_", 1)[0], name[11:].split("_", 1)[1].split(".")[0] if "_" in name[11:] else ""
+    problems = []
+    req_cmd = str((data.get("request") or {}).get("command") or "").lstrip("/")
+    if req_cmd and req_cmd != command:
+        problems.append(f"{name}: filename command '{command}' != request.command '{req_cmd}'")
+    task_id = str((data.get("task") or {}).get("id") or "")
+    m = DATE_IN_ID_RE.search(task_id)
+    if m and "-".join(m.groups()) != date:
+        problems.append(f"{name}: filename date {date} != date in task.id ({task_id})")
+    dest = data.get("artifact_destination") or {}
+    trace = data.get("execution_trace") or {}
+    # staging artifacts (INBOX drafts) are transient: promotion moves them away.
+    if dest.get("write_allowed") is True and not trace.get("halted_at") and dest.get("class") != "staging":
+        dpath, fname = str(dest.get("path") or ""), str(dest.get("filename") or "")
+        target = resolve_destination(dpath) if dpath else None
+        if target is None or not target.exists():
+            problems.append(f"{name}: artifact_destination.path does not exist: {dpath or 'MISSING'}")
+        elif fname and target.is_dir() and not (target / fname).exists():
+            problems.append(f"{name}: artifact_destination.filename not found in {dpath}: {fname}")
+        folder = dpath.rstrip("/").rsplit("/", 1)[-1]
+        if OPP_DIR_RE.match(folder) and slug_ and slug_.split("_")[0] != folder.split("_")[0]:
+            problems.append(f"{name}: slug '{slug_}' does not match target folder '{folder}' (company differs)")
+    return problems
+
+
+def fm_value(fm: str, key: str) -> str | None:
+    m = re.search(rf"^{re.escape(key)}:[ \t]*(.*)$", fm, re.M)
+    return m.group(1).strip().strip("\"'") if m else None
+
+
+def tracker_row_matches(cells: list[str], company: str, role: str) -> bool:
+    """True if some cell loosely matches the company and another the role."""
+    def loose(cell: str, want: str) -> bool:
+        c, w = cell.lower(), want.lower()
+        return len(c) >= 3 and (c in w or w in c)
+    return any(loose(c, company) for c in cells) and any(loose(c, role) and len(c) >= 8 for c in cells)
+
+
+OUTCOMES = {"pass": "Pass", "withdrawn": "Withdrawn", "rejected": "Rejected", "no_response": "No Response"}
+
+
+def cmd_new_run(argv: list[str]) -> int:
+    ap = argparse.ArgumentParser(prog="careeros new-run")
+    ap.add_argument("command", help="command name without slash, e.g. build-resume")
+    ap.add_argument("slug", help="target identifier, lowercase words (normalized for you)")
+    ap.add_argument("--target", help="opportunity folder name or path under Career/06_Job_Opportunities/")
+    ap.add_argument("--file", help="artifact filename, when the command does not fix it")
+    ap.add_argument("--state", choices=["new", "existing", "none"])
+    ap.add_argument("--date", default=None)
+    a = ap.parse_args(argv)
+    command = a.command.lstrip("/")
+    if command not in new_run.COMMANDS:
+        print(f"unknown command '{command}'. Known: {', '.join(sorted(new_run.COMMANDS))}", file=sys.stderr)
+        return 2
+    date = a.date or today()
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date):
+        print("--date must be YYYY-MM-DD", file=sys.stderr)
+        return 2
+    s = slug(a.slug)
+    if not s:
+        print("slug is empty after normalizing", file=sys.stderr)
+        return 2
+    opp = Path(a.target.rstrip("/")).name if a.target else None
+    if opp and not OPP_DIR_RE.match(opp):
+        print(f"--target is not a normalized opportunity folder name: {opp}", file=sys.stderr)
+        return 2
+    needs_opp = "{opp}" in new_run.COMMANDS[command]["dest"]
+    if needs_opp and not opp:
+        print(f"note: {command} writes into an opportunity folder; pass --target <folder> to prefill the destination", file=sys.stderr)
+    if opp and not ((ROOT / OPPS_DIR / opp).is_dir() or (ROOT / CLOSED_DIR / opp).is_dir()) and command != "promote-opportunity":
+        print(f"warning: {opp} does not exist yet under {OPPS_DIR}/", file=sys.stderr)
+    rel = f"{RUNS_DIR}/{date}_{command}_{s}.runtime-io.yaml"
+    if (ROOT / rel).exists():
+        print(f"exists (choose a different slug): {rel}", file=sys.stderr)
+        return 1
+    (ROOT / rel).write_text(new_run.render(command, s, date, opp, a.file, a.state))
+    print(rel)
+    left = len(new_run.unfilled_lines((ROOT / rel).read_text()))
+    print(f"scaffolded with {left} {new_run.MARKER} markers to fill; then: scripts/careeros gate {rel}", file=sys.stderr)
+    return 0
+
+
+def cmd_close(argv: list[str]) -> int:
+    ap = argparse.ArgumentParser(prog="careeros close")
+    ap.add_argument("folder")
+    ap.add_argument("--outcome", required=True, choices=sorted(OUTCOMES))
+    ap.add_argument("--reason", required=True, help="user-supplied reason; never invented")
+    ap.add_argument("--would-reapply", default="Unclear", choices=["Yes", "Maybe", "No", "Unclear"])
+    ap.add_argument("--dry-run", action="store_true")
+    a = ap.parse_args(argv)
+
+    date = today()
+    name = Path(a.folder.rstrip("/")).name
+    src, dst = ROOT / OPPS_DIR / name, ROOT / CLOSED_DIR / name
+    reason = " ".join(a.reason.split()).replace("|", "/")
+    errors: list[str] = []
+    if len(reason) < 8:
+        errors.append("--reason must be a real, user-supplied reason (8+ characters)")
+    if not src.is_dir():
+        errors.append(f"not an open opportunity folder: {OPPS_DIR}/{name}")
+    if dst.exists():
+        errors.append(f"already exists, will not overwrite: {CLOSED_DIR}/{name}")
+    record = src / "job-opportunity.md"
+    text = record.read_text() if record.is_file() else ""
+    fm = FM_RE.match(text).group(1) if FM_RE.match(text) else None
+    company = role = None
+    if fm is None:
+        errors.append("job-opportunity.md missing or has no frontmatter")
+    else:
+        company, role = fm_value(fm, "company"), fm_value(fm, "role")
+        if not company or not role:
+            errors.append("job-opportunity.md frontmatter needs company and role")
+        if fm_value(fm, "status") == "closed":
+            errors.append("job-opportunity.md already has status: closed")
+        if fm_value(fm, "intake_status") == "draft":
+            errors.append("intake_status is draft; promote or discard it instead of closing")
+    tracker = ROOT / TRACKER
+    t_text = tracker.read_text() if tracker.is_file() else ""
+    closed_hdr = t_text.find("## Closed Applications")
+    active_hdr, active_end = t_text.find("## Active Applications"), t_text.find("## Follow-Ups Due")
+    active_rows: list[str] = []
+    if closed_hdr < 0:
+        errors.append("tracker has no '## Closed Applications' section")
+    elif active_hdr < 0 or active_end < active_hdr:
+        errors.append("tracker has no '## Active Applications' section followed by '## Follow-Ups Due'")
+    elif company and role:
+        for line in t_text[active_hdr:active_end].splitlines():
+            cells = [c.strip() for c in line.strip().strip("|").split("|")]
+            if line.startswith("|") and len(cells) > 2 and tracker_row_matches(cells, company, role):
+                active_rows.append(line)
+        if len(active_rows) > 1:
+            errors.append(f"{len(active_rows)} Active tracker rows match this role; reconcile with /sync-application-tracker first")
+    readme = ROOT / CLOSED_DIR / "README.md"
+    r_text = readme.read_text() if readme.is_file() else ""
+    r_sep = re.search(r"^\|[- |]+\|\n", r_text, re.M)
+    if not r_sep:
+        errors.append("Closed_Searches/README.md has no folder table")
+    if errors:
+        print("careeros close BLOCKED:")
+        for e in errors:
+            print(f"  - {e}")
+        return 1
+
+    final = OUTCOMES[a.outcome]
+    add = [f"status: closed", f"closed_date: {date}", f"close_outcome: {a.outcome}",
+           f"close_reason: {json.dumps(reason)}"]
+    if a.outcome == "pass":
+        add += ["decision: pass", f"decision_date: {date}", "decision_source: user_confirmed"]
+    new_fm = fm
+    for line in add:
+        key = line.split(":", 1)[0]
+        if re.search(rf"^{key}:", new_fm, re.M):
+            new_fm = re.sub(rf"^{key}:.*$", lambda _: line, new_fm, count=1, flags=re.M)
+        else:
+            new_fm += "\n" + line
+    new_record = text.replace(fm, new_fm, 1)
+    new_record = rotate(new_record, date) or new_record
+
+    prior_id = ""
+    if active_rows:
+        first = active_rows[0].strip().strip("|").split("|")[0].strip()
+        prior_id = f" Was Active row {first}." if re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9-]*", first) else ""
+    lesson = f"Closed {date} as {a.outcome}; folder archived {date}.{prior_id} {reason}"
+    t_row = f"| {company} | {role} | {final} | {lesson} | {a.would_reapply} |\n"
+    m = re.search(r"^\|[- |]+\|\n(?:\|.*\n?)*", t_text[closed_hdr:], re.M)
+    if not m:
+        print("careeros close BLOCKED:\n  - tracker Closed Applications table not found")
+        return 1
+    end = closed_hdr + m.end()
+    seg = t_text[:end] + ("" if t_text[:end].endswith("\n") else "\n") + t_row + t_text[end:]
+    if active_rows:
+        seg = seg.replace(active_rows[0] + "\n", "", 1)
+    new_tracker = rotate(seg, date) or seg
+    r_row = f"| `{name}/` | {company} — {role} ({a.outcome}, {date}) |\n"
+    new_readme = r_text[:r_sep.end()] + r_row + r_text[r_sep.end():]
+
+    print(f"close {OPPS_DIR}/{name} -> {CLOSED_DIR}/{name}")
+    print(f"  job-opportunity.md: {', '.join(add)}")
+    if active_rows:
+        print(f"  tracker Active row removed: {active_rows[0][:120]}...")
+    print(f"  tracker Closed row: {t_row.strip()}")
+    print(f"  README row:         {r_row.strip()}")
+    if a.dry_run:
+        print("dry run: nothing written")
+        return 0
+    record.write_text(new_record)
+    tracker.write_text(new_tracker)
+    readme.write_text(new_readme)
+    shutil.move(str(src), str(dst))
+    print("done. Not committed.")
+    return 0
+
+
+def read_text(path: str, staged: bool) -> str:
+    return git("show", f":{path}") if staged else (ROOT / path).read_text()
+
+
+def read_bytes(path: str, staged: bool) -> bytes:
+    if not staged:
+        return (ROOT / path).read_bytes()
+    r = subprocess.run(["git", "show", f":{path}"], cwd=ROOT, capture_output=True)
+    return r.stdout if r.returncode == 0 else b""
+
+
+def opportunity_state_problems(folders: set[str]) -> list[str]:
+    """Record, analysis and lifecycle rules for in-scope opportunity folders (see state_checks)."""
+    out: list[str] = []
+    for rel in sorted(folders):
+        folder = ROOT / rel
+        loc = sc.opportunity_location(rel)
+        if not loc or not folder.is_dir():
+            continue
+        section, _, fdate, _ = loc
+        record = folder / "job-opportunity.md"
+        rtext = record.read_text() if record.is_file() else None
+        if not sc.in_scope(fdate, sc.frontmatter(rtext) if rtext else {}):
+            continue  # predates the contract; not rewritten to satisfy it
+        if rtext is not None:
+            out += sc.record_problems(f"{rel}/job-opportunity.md", rtext, folder, section)
+        analysis = folder / "analysis.md"
+        if analysis.is_file():
+            out += sc.analysis_problems(f"{rel}/analysis.md", analysis.read_text(), rtext)
+        discussion = folder / "discussion.md"
+        if discussion.is_file():
+            out += sc.discussion_problems(f"{rel}/discussion.md", discussion.read_text())
+        out += sc.lifecycle_problems(rel, folder)
+        out += gc.grounding_problems(ROOT, folder, rel, int(today()[:4]))
+    return out
+
+
+def cmd_lint(files: list[str]) -> int:
+    """Prose-style warnings for resumes/cover letters. Informational: always exits 0."""
+    total = 0
+    for f in files:
+        p = Path(f)
+        rel = str(p.resolve().relative_to(ROOT)) if p.resolve().is_relative_to(ROOT) else f
+        kind = sty.doc_kind(p.name)
+        if kind is None:
+            print(f"skipped (not resume*.md or cover-letter.md): {f}")
+            continue
+        warns = sty.style_warnings(rel, p.read_text(), kind)
+        total += len(warns)
+        for w in warns:
+            print(f"  - {w}")
+    print(f"careeros lint: {total} style warning(s) (non-blocking)")
+    return 0
+
+
+def cmd_check(staged: bool, all_files: bool = False) -> int:
+    failures: list[str] = []
+    style: list[str] = []
+    folders: set[str] = set()
+    date = today()
+    if staged:
+        rows = [l.split("\t") for l in git("diff", "--cached", "--name-status", "--diff-filter=AMR").splitlines()]
+    else:
+        rows = [l.split("\t") for l in git("diff", "HEAD", "--name-status", "--diff-filter=AMR").splitlines()]
+    if all_files:
+        for path in git("ls-files", "*.md").splitlines():
+            if (ROOT / path).is_file():
+                for prob in frontmatter_problems((ROOT / path).read_text()):
+                    failures.append(f"frontmatter: {path}: {prob}")
+                style += sty.file_warnings(ROOT, path)
+        for base in (OPPS_DIR, CLOSED_DIR):
+            for d in sorted((ROOT / base).glob("*/")):
+                if d.is_dir():
+                    folders.add(f"{base}/{d.name}")
+        log = ROOT / WORK_LOG
+        if log.is_file():
+            failures += sc.log_problems(WORK_LOG, log.read_text(), log.parent)
+        rows = []
+    run_commands = {Path(r[-1]).name[11:].split("_", 1)[0] for r in rows
+                    if r[0][0] == "A" and r[-1].startswith(RUNS_DIR + "/") and r[-1].endswith(".runtime-io.yaml")}
+    failures += sc.provenance_problems([r[-1] for r in rows if r[0][0] == "A"], run_commands)
+    for row in rows:
+        status, path = row[0][0], row[-1]
+        old_path = row[1] if status == "R" else path
+
+        # Prose-style warnings (non-blocking) for changed resumes and cover letters.
+        if status in "AMR" and path.endswith(".md"):
+            style += sty.file_warnings(ROOT, path, read_text(path, staged))
+
+        # 0. State checks on what the run produced (see scripts/state_checks.py).
+        loc = sc.opportunity_location(path)
+        if loc:
+            folders.add(f"{OPPS_DIR if loc[0] == '06_Job_Opportunities' else CLOSED_DIR}/{loc[1]}")
+            if path.endswith(".docx") or re.search(r"/resume(-[a-z0-9-]+)?\.md$", path):
+                failures += sc.deliverable_problems(path, read_bytes(path, staged))
+        if path == WORK_LOG:
+            new_text = read_text(path, staged)
+            failures += sc.log_problems(path, new_text, (ROOT / path).parent)
+            if status == "M":
+                failures += sc.log_append_only_problems(path, git("show", f"HEAD:{old_path}"), new_text)
+
+        # 1. Runtime IO files must pass the conformance gate.
+        if path.startswith(RUNS_DIR + "/") and path.endswith(".runtime-io.yaml"):
+            if status == "A" and not RUN_FILE_RE.match(Path(path).name):
+                failures.append(f"run file name must be <YYYY-MM-DD>_<command-name>_<slug>.runtime-io.yaml: {path}")
+            if cmd_gate(path) != 0:
+                failures.append(f"runtime IO gate failed: {path}")
+            elif status == "A":
+                failures.extend(runtime_state_problems(path))
+
+        # 2. Opportunity folders must be <company>_<role>_<YYYY-MM-DD>.
+        if path.startswith(OPPS_DIR + "/") and path.count("/") >= 3 and status == "A":
+            folder = path.split("/")[2]
+            if not OPP_DIR_RE.match(folder):
+                failures.append(f"opportunity folder name not normalized: {folder}")
+
+        # 3. A draft intake must not be filed under 06_Job_Opportunities.
+        if (path.startswith(OPPS_DIR + "/") and path.endswith("/job-opportunity.md")
+                and path.count("/") == 3):
+            body = git("show", f":{path}") if staged else (ROOT / path).read_text()
+            m = re.search(r"^intake_status:[ \t]*(\S+)", body, re.M)
+            if m and m.group(1) == "draft":
+                failures.append(f"draft intake filed under 06_Job_Opportunities (use /promote-opportunity after review): {path}")
+
+        # 4a. Markdown frontmatter must still be well-formed.
+        if path.endswith(".md"):
+            body = git("show", f":{path}") if staged else (ROOT / path).read_text()
+            for prob in frontmatter_problems(body):
+                failures.append(f"frontmatter: {path}: {prob}")
+
+        # 4. Edited markdown with frontmatter must rotate Last/Previous Update.
+        if path.endswith(".md") and status in "MR":
+            show = ":" if staged else "HEAD:"
+            new = git("show", f"{show}{path}") if staged else (ROOT / path).read_text()
+            old = git("show", f"HEAD:{old_path}")
+            ofm, obody = split_frontmatter(old)
+            nfm, nbody = split_frontmatter(new)
+            if ofm is None or nfm is None or obody == nbody:
+                continue
+            olast = LAST_RE.search(ofm).group(1).strip()
+            nlast = LAST_RE.search(nfm).group(1).strip()
+            nprev = PREV_RE.search(nfm)
+            if nlast == olast == date:
+                continue  # already rotated earlier today
+            if nlast == olast:
+                failures.append(f"content changed but Last Update not bumped: {path}")
+            elif nlast != date and staged:
+                failures.append(f"Last Update is {nlast}, expected today ({date}): {path}")
+            elif not nprev or nprev.group(1).strip() != olast:
+                failures.append(f"Previous Update should be {olast}: {path}")
+
+    failures += opportunity_state_problems(folders)
+    failures = list(dict.fromkeys(failures))
+    if style:
+        print("careeros style warnings (non-blocking; see Career/05_Personal_Profile/writing-style.md):")
+        for w in dict.fromkeys(style):
+            print(f"  - {w}")
+    if failures:
+        print("careeros check FAILED:")
+        for f in failures:
+            print(f"  - {f}")
+        print("Fix, or bypass deliberately with: git commit --no-verify")
+        return 1
+    print("careeros check passed")
+    return 0
+
+
+def main(argv: list[str]) -> int:
+    if len(argv) < 2 or argv[1] in {"-h", "--help"}:
+        print(__doc__)
+        return 0
+    cmd, args = argv[1], argv[2:]
+    if cmd == "today":
+        print(today())
+        return 0
+    if cmd == "slug" and len(args) >= 2:
+        date = args[2] if len(args) > 2 else today()
+        print(slug(args[0], args[1]) + "_" + date)
+        return 0
+    if cmd == "run-path" and len(args) >= 2:
+        date = args[2] if len(args) > 2 else today()
+        name = f"{date}_{args[0].lstrip('/')}_{slug(args[1])}.runtime-io.yaml"
+        path = f"{RUNS_DIR}/{name}"
+        if (ROOT / path).exists():
+            print(f"exists (choose a different slug): {path}", file=sys.stderr)
+            return 1
+        print(path)
+        return 0
+    if cmd == "new-run" and len(args) >= 2:
+        return cmd_new_run(args)
+    if cmd == "touch" and args:
+        return cmd_touch(args)
+    if cmd == "gate" and len(args) == 1:
+        return cmd_gate(args[0])
+    if cmd == "check":
+        return cmd_check("--staged" in args, "--all" in args)
+    if cmd == "lint" and args:
+        return cmd_lint(args)
+    if cmd == "close":
+        return cmd_close(args)
+    if cmd == "lapsed":
+        return lapsed.run(ROOT, OPPS_DIR, TRACKER, WORK_LOG, args)
+    if cmd == "index":
+        return opp_index.run(ROOT, OPPS_DIR, args)
+    print(__doc__)
+    return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))

@@ -1,0 +1,4 @@
+# Ignore all files in INBOX except README.md
+*
+!README.md
+!.gitignore

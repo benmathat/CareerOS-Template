@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# Refuse pushes of this (private, real-data) repo to anywhere that could be public.
+#   - never to the public template remote (that is built by scripts/prepare-template.sh
+#     into a separate directory with fresh history)
+#   - to any other GitHub remote only if `gh` confirms the repo is private
+# Override deliberately with CAREEROS_ALLOW_PUSH=1 git push ...
+remote_name="$1"; remote_url="$2"
+
+if [[ "${CAREEROS_ALLOW_PUSH:-}" == "1" ]]; then
+  echo "pre-push: CAREEROS_ALLOW_PUSH=1, skipping visibility check" >&2
+  exit 0
+fi
+
+if [[ "$remote_name" == "template" || "$remote_url" == *CareerOS-Template* ]]; then
+  echo "pre-push: BLOCKED. '$remote_name' is the public template remote." >&2
+  echo "  This repo holds real personal data. Build the template with" >&2
+  echo "  scripts/prepare-template.sh <new-dir> and push from that directory." >&2
+  exit 1
+fi
+
+if [[ "$remote_url" =~ github\.com[:/]([^/]+/[^/]+)$ ]]; then
+  slug="${BASH_REMATCH[1]%.git}"
+  if ! command -v gh >/dev/null 2>&1; then
+    echo "pre-push: BLOCKED. Cannot verify $slug is private (gh not installed)." >&2
+    echo "  Set CAREEROS_ALLOW_PUSH=1 to override." >&2
+    exit 1
+  fi
+  vis="$(gh repo view "$slug" --json isPrivate -q .isPrivate 2>/dev/null)"
+  if [[ "$vis" != "true" ]]; then
+    echo "pre-push: BLOCKED. $slug is not confirmed private (gh said: '${vis:-no answer}')." >&2
+    echo "  Set CAREEROS_ALLOW_PUSH=1 to override." >&2
+    exit 1
+  fi
+else
+  echo "pre-push: BLOCKED. Unrecognized remote '$remote_url' (not a GitHub repo I can verify)." >&2
+  echo "  Set CAREEROS_ALLOW_PUSH=1 to override." >&2
+  exit 1
+fi
+exit 0

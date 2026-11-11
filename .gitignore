@@ -1,0 +1,55 @@
+# OS-specific files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+*.cache
+
+# Python
+__pycache__/
+*.pyc
+
+# Personal/sensitive information
+# Real data is tracked deliberately in this PRIVATE repo; protection comes from
+# the pre-push hook and the allowlisted template build (see PERSONAL_DATA_CHECKLIST.md).
+# Untracked staging lives in Career/INBOX/ (own .gitignore). Add machine-local
+# secrets here, e.g. .env files:
+.env
+.env.*
+
+# Archive/backup files
+*.bak
+*.backup
+*~
+
+# macOS
+.AppleDouble
+.LSOverride
+
+# Windows
+$RECYCLE.BIN/
+
+# Linux
+.directory
+
+# Claude Code local settings (machine-specific)
+.claude/settings.local.json

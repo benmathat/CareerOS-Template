@@ -1,0 +1,4 @@
+# Markdown carries YAML frontmatter that formatters have mangled before
+# (see `scripts/careeros check`). Never auto-format it.
+*.md
+Career/

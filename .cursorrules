@@ -1,0 +1,3 @@
+# Cursor Rules
+
+Follow `AGENTS.md` in this repo. For any date or time you write, get it from `scripts/careeros today` first; never hardcode or assume it.
